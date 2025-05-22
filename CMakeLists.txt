@@ -10,5 +10,7 @@ add_library(glad src/glad.c)
 
 set(GLFW_LIB_PATH "${CMAKE_SOURCE_DIR}/lib/glfw3.lib")
 
-add_executable(Basic-Triangle-Rendering src/main.cpp)
+file(GLOB SOURCES "src/*.cpp")
+
+add_executable(Basic-Triangle-Rendering ${SOURCES})
 target_link_libraries(Basic-Triangle-Rendering glad ${GLFW_LIB_PATH})
