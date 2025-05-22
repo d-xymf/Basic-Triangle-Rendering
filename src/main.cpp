@@ -33,6 +33,10 @@ int main() {
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     while(!glfwWindowShouldClose(window)) {
+        // Color window
+        glClearColor(0.1f, 0.5f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
         // Send new frame to window
         glfwSwapBuffers(window);
         glfwPollEvents();
