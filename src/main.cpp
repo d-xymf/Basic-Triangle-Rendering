@@ -1,7 +1,9 @@
-#include <iostream>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include<iostream>
+#include<glad/glad.h>
+#include<GLFW/glfw3.h>
+#include<stb/stb_image.h>
 
+#include"texture.h"
 #include"shaderClass.h"
 #include"VAO.h"
 #include"VBO.h"
@@ -11,19 +13,16 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
 // Vertex coordinates
 GLfloat vertices[] = {
-    // Positions                                // Colors
-    -0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f,    1.0f, 0.0f, 0.00f,  // Lower left corner
-    0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f,     0.0f, 1.0f, 0.00f,  // Lower right corner
-    0.0f, 0.5f * float(sqrt(3)) * 2 / 3, 0.0f,  0.0f, 0.0f, 1.0f,  // Upper corner
-    -0.5f / 2, 0.5f * float(sqrt(3)) / 6, 0.0f, 1.0f, 0.0f, 1.0f, // Inner left
-    0.5f / 2, 0.5f * float(sqrt(3)) / 6, 0.0f,  0.0f, 1.0f, 1.0f, // Inner right
-    0.0f, -0.5f * float(sqrt(3)) / 3, 0.0f,     1.0f, 1.0f, 0.0f,  // Inner down
+    // Positions           // Colors            // UV coordinates
+    -0.5f, -0.5f, 0.0f,    1.0f, 0.0f, 0.0f,    0.0f, 0.0f, // Lower left corner
+    -0.5f,  0.5f, 0.0f,    0.0f, 1.0f, 0.0f,    0.0f, 1.0f, // Upper left corner
+     0.5f,  0.5f, 0.0f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f, // Upper right corner
+     0.5f, -0.5f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 0.0f // Lower right corner
 };
 
 GLuint indices[] = {
-    0, 3, 5, // Lower left triangle
-    3, 2, 4, // Lower right triangle
-    5, 4, 1 // Upper triangle
+    0, 2, 1, // Upper triangle
+    0, 3, 2, // Lower triangle
 };
 
 int main()
@@ -35,7 +34,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create GLFW window
-    GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(800, 800, "OpenGL", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -52,7 +51,7 @@ int main()
         return -1;
     }
 
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, 800, 800);
 
     // Create shader program with our vertex and frag shaders
     Shader shaderProgram("../../../resources/shaders/default.vert", "../../../resources/shaders/default.frag");
@@ -68,16 +67,19 @@ int main()
     EBO EBO1(indices, sizeof(indices));
 
     // Link the VBO to our VAO
-    VAO1.LinkAttrib(VBO1, 0, 3, GL_FLOAT, 6 * sizeof(float), (void*)0); // Link vertex coordinates
-    VAO1.LinkAttrib(VBO1, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float))); // Link vertex colors
+    VAO1.LinkAttrib(VBO1, 0, 3, GL_FLOAT, 8 * sizeof(float), (void*)0); // Link vertex coordinates
+    VAO1.LinkAttrib(VBO1, 1, 3, GL_FLOAT, 8 * sizeof(float), (void*)(3 * sizeof(float))); // Link vertex colors
+    VAO1.LinkAttrib(VBO1, 2, 2, GL_FLOAT, 8 * sizeof(float), (void*)(6 * sizeof(float))); // Link vertex colors
 
     // Unbind everything
     VAO1.Unbind();
     VBO1.Unbind();
     EBO1.Unbind();
 
-    // Get the id of the "scale" uniform
-    GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
+    // Textures
+    Texture oakPlanks("../../../resources/textures/planks_oak.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
+    // Set texture as uniform "tex0" so it can be used in shaders
+    oakPlanks.texUnit(shaderProgram, "tex0", 0);
 
     // Set framebuffer resize callback
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -92,13 +94,13 @@ int main()
         // Tell OpenGL which shader program to use
         shaderProgram.Activate();
 
-        // Set "scale" uniform to 0.5
-        glUniform1f(uniID, 0.5f);
+        // Bind oakPlanks texture
+        oakPlanks.Bind();
 
         // Bind the VAO so OpenGL knows to use it
         VAO1.Bind();
         // Draw the triangle using the GL_TRIANGLES primitive
-        glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         // Send new frame to window
         glfwSwapBuffers(window);
@@ -109,6 +111,7 @@ int main()
     VAO1.Delete();
     VBO1.Delete();
     EBO1.Delete();
+    oakPlanks.Delete();
     shaderProgram.Delete();
 
     glfwTerminate();
